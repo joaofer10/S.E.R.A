@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.E.R.A. - Gerenciador de Tarefas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --cor-fundo: #080A1F;
+            --cor-primaria: #00ffff; /* Ciano futurista */
+            --cor-secundaria: #1f2a40; /* Cinza azulado */
+            --cor-texto: #c0c0c0; /* Cinza claro */
+            --cor-borda: #005555;
+            --cor-selecao: rgba(0, 255, 255, 0.1);
+            --sombra-neon: 0 0 5px var(--cor-primaria), 0 0 10px var(--cor-primaria);
+            --transicao-suave: 0.3s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto Mono', monospace;
+            color: var(--cor-texto);
+        }
+
+        body {
+            background-color: var(--cor-fundo);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--cor-secundaria);
+            border: 2px solid var(--cor-borda);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            padding: 30px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 2em;
+            text-align: center;
+            color: var(--cor-primaria);
+            text-shadow: var(--sombra-neon);
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--cor-primaria);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex-grow: 1;
+            background-color: transparent;
+            border: 1px solid var(--cor-borda);
+            padding: 12px;
+            border-radius: 5px;
+            outline: none;
+            font-size: 1em;
+            transition: border-color var(--transicao-suave), box-shadow var(--transicao-suave);
+        }
+
+        .input-area input:focus {
+            border-color: var(--cor-primaria);
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        }
+
+        .input-area button {
+            background-color: var(--cor-primaria);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            color: var(--cor-fundo);
+            cursor: pointer;
+            transition: background-color var(--transicao-suave), transform var(--transicao-suave);
+        }
+
+        .input-area button:hover {
+            background-color: #00e5e5;
+            transform: scale(1.05);
+        }
+
+        .task-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-item {
+            background-color: #151a30;
+            border: 1px solid var(--cor-borda);
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color var(--transicao-suave), transform var(--transicao-suave);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .task-item:hover {
+            background-color: #1d2340;
+            transform: translateY(-3px);
+        }
+
+        .task-item.concluida {
+            background-color: #0a1020;
+            opacity: 0.6;
+            transition: opacity var(--transicao-suave);
+        }
+
+        .task-item.concluida span {
+            text-decoration: line-through;
+            color: #556677;
+        }
+
+        .task-item.selecionada {
+            box-shadow: inset 0 0 0 2px var(--cor-primaria);
+            background-color: var(--cor-selecao);
+        }
+
+        .task-text {
+            flex-grow: 1;
+            word-break: break-word;
+        }
+
+        .task-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .check-box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--cor-primaria);
+            border-radius: 3px;
+            display: inline-block;
+            cursor: pointer;
+            position: relative;
+            transition: background-color var(--transicao-suave);
+        }
+
+        .concluida .check-box {
+            background-color: var(--cor-primaria);
+        }
+
+        .concluida .check-box::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 5px;
+            width: 6px;
+            height: 10px;
+            border: solid var(--cor-fundo);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .action-button {
+            background: none;
+            border: 1px solid var(--cor-borda);
+            color: var(--cor-primaria);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color var(--transicao-suave), transform var(--transicao-suave);
+        }
+
+        .action-button:hover {
+            background-color: rgba(0, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+        
+        .delete-selected-btn {
+            background-color: #ff3366; /* Cor de destaque para deletar */
+            color: var(--cor-fundo);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color var(--transicao-suave), transform var(--transicao-suave);
+        }
+
+        .delete-selected-btn:hover {
+            background-color: #ff0044;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            .input-area {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>S.E.R.A. - Gerenciador de Tarefas</h1>
+
+    <div class="input-area">
+        <input type="text" id="nova-tarefa" placeholder="Inserir nova tarefa...">
+        <button id="btn-adicionar">Adicionar</button>
+    </div>
+
+    <ul id="lista-tarefas" class="task-list">
+        </ul>
+    
+    <button id="btn-deletar-selecionadas" class="delete-selected-btn" style="display: none;">Deletar Selecionadas</button>
+
+</div>
+
+<script>
+    const inputTarefa = document.getElementById('nova-tarefa');
+    const btnAdicionar = document.getElementById('btn-adicionar');
+    const listaTarefas = document.getElementById('lista-tarefas');
+    const btnDeletarSelecionadas = document.getElementById('btn-deletar-selecionadas');
+
+    // Carrega as tarefas do localStorage ao iniciar
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarTarefas();
+    });
+
+    // Adiciona uma nova tarefa
+    btnAdicionar.addEventListener('click', adicionarTarefa);
+    inputTarefa.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            adicionarTarefa();
+        }
+    });
+
+    // Deleta as tarefas selecionadas
+    btnDeletarSelecionadas.addEventListener('click', deletarSelecionadas);
+
+    function adicionarTarefa() {
+        const texto = inputTarefa.value.trim();
+        if (texto === '') {
+            return;
+        }
+
+        const novaTarefa = {
+            id: Date.now(),
+            texto: texto,
+            concluida: false
+        };
+
+        const tarefas = obterTarefas();
+        tarefas.push(novaTarefa);
+        salvarTarefas(tarefas);
+
+        renderizarTarefas();
+        inputTarefa.value = '';
+    }
+
+    function renderizarTarefas() {
+        const tarefas = obterTarefas();
+        listaTarefas.innerHTML = ''; // Limpa a lista antes de renderizar
+
+        tarefas.forEach(tarefa => {
+            const li = document.createElement('li');
+            li.className = 'task-item';
+            if (tarefa.concluida) {
+                li.classList.add('concluida');
+            }
+            li.dataset.id = tarefa.id;
+
+            // Caixa de seleção para marcar como concluída
+            const checkBox = document.createElement('span');
+            checkBox.className = 'check-box';
+            checkBox.addEventListener('click', (e) => {
+                e.stopPropagation(); // Previne que o clique na checkbox selecione a tarefa
+                toggleConcluida(tarefa.id);
+            });
+            li.appendChild(checkBox);
+
+            // Texto da tarefa
+            const textoSpan = document.createElement('span');
+            textoSpan.className = 'task-text';
+            textoSpan.textContent = tarefa.texto;
+            li.appendChild(textoSpan);
+
+            // Evento para seleção de deleção
+            li.addEventListener('click', () => {
+                li.classList.toggle('selecionada');
+                verificarSelecao();
+            });
+
+            listaTarefas.appendChild(li);
+        });
+    }
+
+    function toggleConcluida(id) {
+        const tarefas = obterTarefas();
+        const tarefa = tarefas.find(t => t.id === id);
+        if (tarefa) {
+            tarefa.concluida = !tarefa.concluida;
+            salvarTarefas(tarefas);
+            renderizarTarefas();
+        }
+    }
+    
+    function verificarSelecao() {
+        const selecionadas = document.querySelectorAll('.task-item.selecionada').length;
+        if (selecionadas > 0) {
+            btnDeletarSelecionadas.style.display = 'block';
+        } else {
+            btnDeletarSelecionadas.style.display = 'none';
+        }
+    }
+
+    function deletarSelecionadas() {
+        const idsParaDeletar = Array.from(document.querySelectorAll('.task-item.selecionada')).map(item => parseInt(item.dataset.id));
+        
+        let tarefas = obterTarefas();
+        tarefas = tarefas.filter(t => !idsParaDeletar.includes(t.id));
+        
+        salvarTarefas(tarefas);
+        renderizarTarefas();
+        verificarSelecao(); // Esconde o botão após a exclusão
+    }
+
+    // Funções de localStorage
+    function obterTarefas() {
+        const tarefasJSON = localStorage.getItem('tarefas');
+        return tarefasJSON ? JSON.parse(tarefasJSON) : [];
+    }
+
+    function salvarTarefas(tarefas) {
+        localStorage.setItem('tarefas', JSON.stringify(tarefas));
+    }
+
+    function carregarTarefas() {
+        renderizarTarefas();
+    }
+</script>
+
+</body>
+</html>
