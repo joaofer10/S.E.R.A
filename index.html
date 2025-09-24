@@ -243,126 +243,189 @@
 
 <script>
     const inputTarefa = document.getElementById('nova-tarefa');
-    const btnAdicionar = document.getElementById('btn-adicionar');
-    const listaTarefas = document.getElementById('lista-tarefas');
-    const btnDeletarSelecionadas = document.getElementById('btn-deletar-selecionadas');
+const btnAdicionar = document.getElementById('btn-adicionar');
+const listaTarefas = document.getElementById('lista-tarefas');
+const btnDeletarSelecionadas = document.getElementById('btn-deletar-selecionadas');
 
-    // Carrega as tarefas do localStorage ao iniciar
-    document.addEventListener('DOMContentLoaded', () => {
-        carregarTarefas();
-    });
+// Variável para armazenar o item que está sendo arrastado
+let itemArrastado = null;
 
-    // Adiciona uma nova tarefa
-    btnAdicionar.addEventListener('click', adicionarTarefa);
-    inputTarefa.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            adicionarTarefa();
-        }
-    });
+// Carrega as tarefas do localStorage ao iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    carregarTarefas();
+});
 
-    // Deleta as tarefas selecionadas
-    btnDeletarSelecionadas.addEventListener('click', deletarSelecionadas);
+// Adiciona uma nova tarefa
+btnAdicionar.addEventListener('click', adicionarTarefa);
+inputTarefa.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        adicionarTarefa();
+    }
+});
 
-    function adicionarTarefa() {
-        const texto = inputTarefa.value.trim();
-        if (texto === '') {
-            return;
-        }
+// Deleta as tarefas selecionadas
+btnDeletarSelecionadas.addEventListener('click', deletarSelecionadas);
 
-        const novaTarefa = {
-            id: Date.now(),
-            texto: texto,
-            concluida: false
-        };
-
-        const tarefas = obterTarefas();
-        tarefas.push(novaTarefa);
-        salvarTarefas(tarefas);
-
-        renderizarTarefas();
-        inputTarefa.value = '';
+// Adiciona nova tarefa
+function adicionarTarefa() {
+    const texto = inputTarefa.value.trim();
+    if (texto === '') {
+        return;
     }
 
-    function renderizarTarefas() {
-        const tarefas = obterTarefas();
-        listaTarefas.innerHTML = ''; // Limpa a lista antes de renderizar
+    const novaTarefa = {
+        id: Date.now(),
+        texto: texto,
+        concluida: false
+    };
 
-        tarefas.forEach(tarefa => {
-            const li = document.createElement('li');
-            li.className = 'task-item';
-            if (tarefa.concluida) {
-                li.classList.add('concluida');
-            }
-            li.dataset.id = tarefa.id;
+    const tarefas = obterTarefas();
+    tarefas.push(novaTarefa);
+    salvarTarefas(tarefas);
 
-            // Caixa de seleção para marcar como concluída
-            const checkBox = document.createElement('span');
-            checkBox.className = 'check-box';
-            checkBox.addEventListener('click', (e) => {
-                e.stopPropagation(); // Previne que o clique na checkbox selecione a tarefa
-                toggleConcluida(tarefa.id);
-            });
-            li.appendChild(checkBox);
+    renderizarTarefas();
+    inputTarefa.value = '';
+}
 
-            // Texto da tarefa
-            const textoSpan = document.createElement('span');
-            textoSpan.className = 'task-text';
-            textoSpan.textContent = tarefa.texto;
-            li.appendChild(textoSpan);
+// Renderiza a lista de tarefas
+function renderizarTarefas() {
+    const tarefas = obterTarefas();
+    listaTarefas.innerHTML = '';
 
-            // Evento para seleção de deleção
-            li.addEventListener('click', () => {
+    tarefas.forEach(tarefa => {
+        const li = document.createElement('li');
+        li.className = 'task-item';
+        if (tarefa.concluida) {
+            li.classList.add('concluida');
+        }
+        li.dataset.id = tarefa.id;
+
+        // **Nova alteração:** Ativar o recurso de arrastar e soltar
+        li.draggable = true;
+
+        // Caixa de seleção para marcar como concluída
+        const checkBox = document.createElement('span');
+        checkBox.className = 'check-box';
+        checkBox.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleConcluida(tarefa.id);
+        });
+        li.appendChild(checkBox);
+
+        // Texto da tarefa
+        const textoSpan = document.createElement('span');
+        textoSpan.className = 'task-text';
+        textoSpan.textContent = tarefa.texto;
+        li.appendChild(textoSpan);
+
+        // Evento para seleção de deleção
+        li.addEventListener('click', (e) => {
+            // Garante que o clique na checkbox não selecione a tarefa
+            if (e.target !== checkBox) {
                 li.classList.toggle('selecionada');
                 verificarSelecao();
-            });
-
-            listaTarefas.appendChild(li);
+            }
         });
-    }
 
-    function toggleConcluida(id) {
-        const tarefas = obterTarefas();
-        const tarefa = tarefas.find(t => t.id === id);
-        if (tarefa) {
-            tarefa.concluida = !tarefa.concluida;
-            salvarTarefas(tarefas);
-            renderizarTarefas();
-        }
-    }
-    
-    function verificarSelecao() {
-        const selecionadas = document.querySelectorAll('.task-item.selecionada').length;
-        if (selecionadas > 0) {
-            btnDeletarSelecionadas.style.display = 'block';
+        // Eventos de Drag and Drop
+        li.addEventListener('dragstart', () => {
+            // Adiciona a classe 'arrastando' ao item que está sendo movido
+            li.classList.add('arrastando');
+            itemArrastado = li;
+        });
+
+        li.addEventListener('dragend', () => {
+            // Remove a classe 'arrastando' quando a ação de arrastar termina
+            li.classList.remove('arrastando');
+        });
+
+        listaTarefas.appendChild(li);
+    });
+
+    // **Nova alteração:** Adicionar evento de "drop" na lista inteira
+    listaTarefas.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Permite o "drop"
+        const itemDepois = obterItemDepois(e.clientY);
+        const arrastando = document.querySelector('.arrastando');
+        if (itemDepois == null) {
+            listaTarefas.appendChild(arrastando);
         } else {
-            btnDeletarSelecionadas.style.display = 'none';
+            listaTarefas.insertBefore(arrastando, itemDepois);
         }
-    }
+    });
 
-    function deletarSelecionadas() {
-        const idsParaDeletar = Array.from(document.querySelectorAll('.task-item.selecionada')).map(item => parseInt(item.dataset.id));
-        
-        let tarefas = obterTarefas();
-        tarefas = tarefas.filter(t => !idsParaDeletar.includes(t.id));
-        
+    // Salva a nova ordem no localStorage após o drop
+    listaTarefas.addEventListener('drop', () => {
+        salvarNovaOrdem();
+    });
+}
+
+function toggleConcluida(id) {
+    const tarefas = obterTarefas();
+    const tarefa = tarefas.find(t => t.id === id);
+    if (tarefa) {
+        tarefa.concluida = !tarefa.concluida;
         salvarTarefas(tarefas);
         renderizarTarefas();
-        verificarSelecao(); // Esconde o botão após a exclusão
     }
+}
 
-    // Funções de localStorage
-    function obterTarefas() {
-        const tarefasJSON = localStorage.getItem('tarefas');
-        return tarefasJSON ? JSON.parse(tarefasJSON) : [];
+function verificarSelecao() {
+    const selecionadas = document.querySelectorAll('.task-item.selecionada').length;
+    if (selecionadas > 0) {
+        btnDeletarSelecionadas.style.display = 'block';
+    } else {
+        btnDeletarSelecionadas.style.display = 'none';
     }
+}
 
-    function salvarTarefas(tarefas) {
-        localStorage.setItem('tarefas', JSON.stringify(tarefas));
-    }
+function deletarSelecionadas() {
+    const idsParaDeletar = Array.from(document.querySelectorAll('.task-item.selecionada')).map(item => parseInt(item.dataset.id));
 
-    function carregarTarefas() {
-        renderizarTarefas();
-    }
+    let tarefas = obterTarefas();
+    tarefas = tarefas.filter(t => !idsParaDeletar.includes(t.id));
+
+    salvarTarefas(tarefas);
+    renderizarTarefas();
+    verificarSelecao();
+}
+
+// **Nova função:** Obtém o item que está abaixo do cursor durante o arrastar
+function obterItemDepois(y) {
+    const itensNaoArrastando = [...listaTarefas.querySelectorAll('.task-item:not(.arrastando)')];
+
+    return itensNaoArrastando.reduce((proximo, item) => {
+        const box = item.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > proximo.offset) {
+            return { offset: offset, element: item };
+        } else {
+            return proximo;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// **Nova função:** Salva a nova ordem das tarefas no localStorage
+function salvarNovaOrdem() {
+    const novaOrdemIds = Array.from(listaTarefas.querySelectorAll('.task-item')).map(item => parseInt(item.dataset.id));
+    const tarefas = obterTarefas();
+    const tarefasOrdenadas = novaOrdemIds.map(id => tarefas.find(t => t.id === id));
+    salvarTarefas(tarefasOrdenadas);
+}
+
+// Funções de localStorage (sem alteração)
+function obterTarefas() {
+    const tarefasJSON = localStorage.getItem('tarefas');
+    return tarefasJSON ? JSON.parse(tarefasJSON) : [];
+}
+
+function salvarTarefas(tarefas) {
+    localStorage.setItem('tarefas', JSON.stringify(tarefas));
+}
+
+function carregarTarefas() {
+    renderizarTarefas();
+}
 </script>
 
 </body>
